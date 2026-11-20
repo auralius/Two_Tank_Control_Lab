@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Barefoot Two-Tank Control Lab: nonlinear liquid level control in JavaScript.">
+<title>Two-Tank Control Lab · Barefoot Control Series</title>
+<link rel="stylesheet" href="./styles.css?v=1.0.0">
+<script defer src="./app.js?v=1.0.0"></script>
+</head>
+<body>
+<div class="layout">
+  <header class="site-header">
+    <div class="brand"><span class="brand-icon" aria-hidden="true">◉</span><span><strong>TWO<span>TANK</span> LAB</strong><small>BAREFOOT CONTROL SERIES</small></span></div>
+    <div class="header-right"><span class="product-tag">NONLINEAR · JAVASCRIPT · v1.0</span><span id="statusLabel" class="status"><i></i> Loading</span></div>
+  </header>
+  <div class="hero">
+    <div>
+      <div class="eyebrow">CONTROL SYSTEMS <span></span> INTERACTIVE LABORATORY</div>
+      <h1>Control the flow.<br><em>Master the levels.</em></h1>
+      <p>Two gravity-fed tanks in series, one pump, and a nonlinear process. Write your controller in JavaScript; the simulator handles the hydraulic dynamics.</p>
+    </div>
+    <div class="hero-model"><span>NONLINEAR COUPLED-STATE PLANT</span><div class="hero-equations">A₁ ḣ₁ = qₚ − k₁₂√h₁<br>A₂ ḣ₂ = k₁₂√h₁ − k₂√h₂ − d</div><small>One actuator · Two water-level states</small></div>
+  </div>
+  <section class="metrics" aria-label="Live tank measurements">
+    <div class="metric"><span>TANK 1 LEVEL</span><div><strong id="readH1">10.0</strong><b>cm</b></div><small>Upstream water level</small></div>
+    <div class="metric"><span>TANK 2 LEVEL</span><div><strong id="readH2">8.0</strong><b>cm</b></div><small>Controlled output</small></div>
+    <div class="metric"><span>SETPOINT · TANK 2</span><div><strong id="readTarget">26.0</strong><b>cm</b></div><small>Desired downstream level</small></div>
+    <div class="metric"><span>PUMP COMMAND</span><div><strong id="readPump">0.0</strong><b>%</b></div><small>Actuator output</small></div>
+  </section>
+  <main>
+    <div class="main-grid">
+      <section class="panel plant-panel" aria-labelledby="plantTitle">
+        <div class="panel-header"><div><span class="section-tag">01 / THE PROCESS</span><h2 id="plantTitle">Hydraulic workspace</h2></div><span class="small-chip">ONE PUMP · TWO TANKS</span></div>
+        <div class="plant-stage">
+          <div class="stage-time" id="stageTime">t = 0.0 s</div>
+          <div class="tanks-scene" aria-label="Animated gravity-fed tank levels">
+            <svg class="pipes" viewBox="0 0 540 285" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+              <path d="M24 180 H89 V90 H125" class="pipe pump-pipe"/>
+              <path d="M247 204 H287 V156 H323" class="pipe mid-pipe"/>
+              <path d="M445 251 H487 V268 H524" class="pipe outlet-pipe"/>
+              <circle cx="45" cy="180" r="19" class="pump-shell"/><path d="M36 179 L48 169 L53 183 L39 193 Z" class="pump-impeller"/>
+              <path d="M84 84 l10 6 -10 6" class="flow-arrow"/><path d="M311 150 l10 6 -10 6" class="flow-arrow"/><path d="M512 262 l10 6 -10 6" class="flow-arrow"/>
+            </svg>
+            <div class="tank-view tank-one" id="tankOne"><div class="tank-head"><span>TANK 01</span><span>h₁</span></div><div class="tank-vessel"><div class="ruler" aria-hidden="true"><span>60</span><span>40</span><span>20</span><span>0</span></div><div class="water" id="water1"><div class="wave"></div></div><div class="water-number"><strong id="level1">10.0</strong><small>cm</small></div></div><div class="tank-base">UPSTREAM</div></div>
+            <div class="tank-view tank-two" id="tankTwo"><div class="tank-head"><span>TANK 02</span><span>h₂</span></div><div class="tank-vessel"><div class="ruler" aria-hidden="true"><span>60</span><span>40</span><span>20</span><span>0</span></div><div class="water water-two" id="water2"><div class="wave"></div></div><div class="target-line" id="targetLine"><span>SETPOINT</span></div><div class="water-number"><strong id="level2">8.0</strong><small>cm</small></div></div><div class="tank-base">CONTROLLED OUTPUT</div></div>
+            <div class="flow-label flow-pump" id="flowPump">PUMP 0.00 L/s</div><div class="flow-label flow-between" id="flowBetween">TRANSFER 2.05 L/s</div><div class="flow-label flow-outlet" id="flowOut">OUTLET 1.22 L/s</div>
+          </div>
+          <div class="flow-summary"><div><span>INTER-TANK FLOW</span><strong id="readTransfer">0.00 L/s</strong></div><div><span>OUTLET FLOW</span><strong id="readOutlet">0.00 L/s</strong></div><div><span>EXTRA LEAK</span><strong id="readLeak">0.00 L/s</strong></div></div>
+          <p class="stage-note">The pump feeds Tank 1. Gravity transfers water to Tank 2, which drains through its own outlet. Pump power is limited to <b>0–100%</b>.</p>
+        </div>
+        <div class="controls">
+          <button class="button primary" id="runBtn">▶ Run</button>
+          <button class="button secondary" id="pauseBtn">Ⅱ Pause</button>
+          <button class="button secondary" id="stepBtn">↷ Step <span id="stepLabel">0.2 s</span></button>
+          <button class="button secondary" id="finishBtn">⏩ Run to end</button>
+          <button class="button secondary" id="resetBtn">↺ Reset</button>
+          <label class="speed-control">SPEED <select id="speedSelect" aria-label="Simulation playback speed"><option value="1">1×</option><option value="4">4×</option><option value="8" selected>8×</option><option value="20">20×</option><option value="40">40×</option></select></label>
+        </div>
+        <div class="workspace-bottom"><div><span>SIMULATION TIME</span><strong id="durationLabel">0 / 260 s</strong></div><div class="progress-track"><div id="progressFill"></div></div><span class="time-note">SPEED changes playback only, not T<sub>s</sub>.</span></div>
+      </section>
+      <section class="panel editor-panel" aria-labelledby="editorTitle">
+        <div class="panel-header"><div><span class="section-tag">02 / YOUR ALGORITHM</span><h2 id="editorTitle">JavaScript controller</h2></div><span class="small-chip js-chip">INIT() + CONTROLLER()</span></div>
+        <div class="editor-toolbar"><span>STUDENT STARTER · ZERO PUMP</span><div><a href="#apiTitle">API reference ↓</a><button id="restoreBtn">Reset starter</button></div></div>
+        <div class="code-wrap"><div id="lineNumbers" class="code-gutter" aria-hidden="true"></div><textarea id="codeEditor" spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off" aria-label="JavaScript code editor"></textarea></div>
+        <div class="editor-actions"><button class="button primary" id="applyBtn">↻ Apply &amp; reset</button><button class="button secondary" id="saveBtn">↓ Save .js</button></div>
+        <p id="message" class="editor-message" role="status">Define your controller and press Apply & reset.</p>
+        <div class="api-guide" id="apiTitle">
+          <div class="api-title"><h3>Controller API reference</h3><span>Always available in student functions</span></div>
+          <p><code>state</code>, <code>params</code> and <code>memory</code> are accessible in all your functions. They are bound automatically at each controller call. <strong>Do not redeclare them at the script top level.</strong></p>
+          <div class="api-category"><h4>Standard functions</h4><dl>
+            <div><dt><code>init()</code></dt><dd>Optional. Runs once after each fresh reset; initialize <code>memory</code> here.</dd></div>
+            <div><dt><code>controller()</code></dt><dd>Required. Runs every <code>params.dt</code>. Return a numeric pump percent (0–100), or <code>{ pump: value }</code>.</dd></div>
+          </dl></div>
+          <div class="api-category"><h4><code>state</code> · read-only process values</h4><dl>
+            <div><dt><code>state.h1, state.h2</code></dt><dd>Current tank levels (cm)</dd></div>
+            <div><dt><code>state.target.h2</code></dt><dd>Tank 2 level setpoint (cm)</dd></div>
+            <div><dt><code>state.t</code></dt><dd>Simulation time (s)</dd></div>
+            <div><dt><code>state.error</code></dt><dd>Setpoint minus Tank 2 level (cm)</dd></div>
+            <div><dt><code>state.u</code></dt><dd>Previously applied pump command (%)</dd></div>
+            <div><dt><code>state.qpump</code></dt><dd>Actual previous pump flow (L/s)</dd></div>
+            <div><dt><code>state.q12</code></dt><dd>Previous inter-tank flow (L/s)</dd></div>
+            <div><dt><code>state.qout</code></dt><dd>Previous outlet flow (L/s)</dd></div>
+            <div><dt><code>state.qleak</code></dt><dd>Previous additional leak flow (L/s)</dd></div>
+            <div><dt><code>state.overflow1, state.overflow2</code></dt><dd>Previous overflow flows (L/s)</dd></div>
+          </dl></div>
+          <div class="api-category"><h4><code>params</code> · read-only physics settings</h4><dl>
+            <div><dt><code>params.A1, params.A2</code></dt><dd>Tank capacities per centimetre (L/cm)</dd></div>
+            <div><dt><code>params.k12, params.k2</code></dt><dd>Gravity-flow coefficients (L/s/√cm)</dd></div>
+            <div><dt><code>params.qmax</code></dt><dd>Maximum pump flow at 100% (L/s)</dd></div>
+            <div><dt><code>params.hmax</code></dt><dd>Maximum tank height: 60 cm</dd></div>
+            <div class="api-accent"><dt><code>params.dt</code></dt><dd>Selected sampling interval <b id="apiDt">0.2 s</b></dd></div>
+          </dl></div>
+          <div class="api-category"><h4><code>memory</code> · writable student variables</h4><p><code>memory</code> starts as <code>{}</code>. Initialize counters, integrators, filters, and arrays inside <code>init()</code>. Only your code changes memory; it persists across controller calls and resets for each new experiment.</p><pre><code>function init() {
+  memory.sum = 0;
+  memory.history = [];
+}
+// In controller():
+memory.history.push(state.h2);</code></pre></div>
+          <p class="api-foot">The simulator automatically updates both water levels; <strong>students only return pump commands and update their own memory</strong>. The command is saturated to 0–100%.</p>
+        </div>
+      </section>
+    </div>
+    <div class="secondary-grid">
+      <section class="panel setup-panel">
+        <div class="panel-header"><div><span class="section-tag">03 / EXPERIMENT SETUP</span><h2>Change the hydraulic plant</h2></div></div>
+        <p class="model-notation">A₁ ḣ₁ = qₚ − k₁₂√h₁ &nbsp; · &nbsp; A₂ ḣ₂ = k₁₂√h₁ − k₂√h₂ − d</p>
+        <div class="fields">
+          <label class="field"><span>CHALLENGE</span><select id="scenarioSelect"><option value="setpoint">Fixed setpoint</option><option value="switch">Setpoint change</option><option value="track">Moving target</option><option value="leak">Disturbance / leak</option></select></label>
+          <label class="field"><span>TANK 2 SETPOINT (cm)</span><input id="setpointInput" type="number" min="5" max="45" step="1" value="26"></label>
+          <label class="field"><span>A₁ · TANK 1 (L/cm)</span><input id="a1Input" type="number" min="0.5" max="5" step="0.1" value="1.4"></label>
+          <label class="field"><span>A₂ · TANK 2 (L/cm)</span><input id="a2Input" type="number" min="0.5" max="5" step="0.1" value="1.6"></label>
+          <label class="field"><span>k₁₂ · TRANSFER COEFFICIENT</span><input id="k12Input" type="number" min="0.1" max="1.5" step="0.01" value="0.65"></label>
+          <label class="field"><span>k₂ · OUTLET COEFFICIENT</span><input id="k2Input" type="number" min="0.1" max="1.5" step="0.01" value="0.43"></label>
+          <label class="field"><span>q<sub>max</sub> · MAX PUMP FLOW (L/s)</span><input id="qmaxInput" type="number" min="0.5" max="6" step="0.1" value="3.2"></label>
+          <label class="field"><span>SAMPLING PERIOD T<sub>s</sub></span><select id="dtSelect"><option value="0.05">0.05 s (20 Hz)</option><option value="0.1">0.10 s (10 Hz)</option><option value="0.2" selected>0.20 s (5 Hz)</option><option value="0.5">0.50 s (2 Hz)</option><option value="1">1.00 s (1 Hz)</option></select></label>
+        </div>
+        <p class="helper-text config-foot" id="configNote">Tₛ = 0.2 s · 260 s simulation duration</p>
+        <div class="setup-footer"><span>Changing the plant resets the experiment and memory.</span><button class="link-button" id="shareBtn">⧉ Copy setup link</button></div>
+        <div class="discrete-guide"><h3>Nonlinear dynamics and discretization</h3><p>At each sample, the simulator holds the pump command constant and performs bounded explicit-Euler hydraulic updates with internal substeps ≤ 0.05 s. Negative volumes are prevented and excess water spills from full tanks.</p><div class="formula">q₁₂ = k₁₂√h₁ &nbsp; | &nbsp; q₂ = k₂√h₂</div><p>Here <code>d</code> is an extra downstream leak (0.45 L/s after 115 s in the disturbance challenge). These are <b>non-interacting</b> tanks in series; the flow between them depends on Tank 1 level, not the level difference.</p></div>
+      </section>
+      <section class="panel plots-panel">
+        <div class="panel-header compact"><div><span class="section-tag">04 / LIVE RESULTS</span><h2>What did your controller do?</h2></div></div>
+        <div class="plot-heading"><strong>Water levels</strong><span><i class="key orange"></i>Tank 2 <i class="key teal"></i>Target <i class="key blue"></i>Tank 1</span></div>
+        <div class="canvas-wrap"><canvas id="levelChart" aria-label="Water levels against time"></canvas></div>
+        <div class="plot-heading power-heading"><strong>Actuator and flows</strong><span><i class="key orange"></i>Pump % <i class="key teal"></i>Transfer L/s <i class="key blue"></i>Outlet L/s</span></div>
+        <p class="helper-text plot-units">Pump uses the left 0–100% scale; transfer/outlet flows use a 0–6 L/s scale.</p><div class="canvas-wrap short"><canvas id="flowChart" aria-label="Pump command and flows against time"></canvas></div>
+        <div class="analysis-footer"><span>RMS level error after 50 s: <b id="rmsLabel">—</b></span><button class="button outline" id="csvBtn">↓ Export CSV</button></div>
+        <p class="helper-text csv-note">CSV contains scenario, timestamps, both tank levels, all flows, pump command, target, and physical parameters.</p>
+      </section>
+    </div>
+    <section class="panel tests-panel">
+      <div class="panel-header"><div><span class="section-tag">05 / FOUR CHALLENGES</span><h2>Test one controller across four experiments</h2><p class="helper-text">Each test starts from fresh tank levels, a fresh <code>memory</code> object, and a new <code>init()</code> call.</p></div><button class="button primary" id="testBtn">✓ Run 4 tests</button></div>
+      <div class="test-grid" id="testResults"><div class="empty-tests">No tests yet. Design your controller, then evaluate four independent scenarios.</div></div>
+    </section>
+  </main>
+  <footer><span><strong>BAREFOOT CONTROL SERIES</strong> · Two-Tank Control Lab v1.0</span><span>No installation · Browser JavaScript · MIT License</span></footer>
+</div>
+</body>
+</html>
