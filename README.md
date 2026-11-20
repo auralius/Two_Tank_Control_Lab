@@ -1,6 +1,10 @@
 # Two-Tank Control Lab v1.0
 
-**Barefoot Control Series · Nonlinear liquid-level control · Student edition**
+___URL: https://auralius.github.io/Two_Tank_Control_Lab/___
+
+---
+
+**Nonlinear liquid-level control · Student edition**
 
 A lightweight JavaScript playground for controlling two non-interacting tanks in series. The pump feeds Tank 1, gravity transfers the liquid to Tank 2, and Tank 2 drains to the environment. Students regulate the **level of Tank 2**, using a **single pump command**. The lab uses only browser-native HTML/CSS/JavaScript and a Web Worker; no npm dependencies or software installation are required.
 
