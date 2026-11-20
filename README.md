@@ -157,7 +157,7 @@ Each row after the first represents the state at the **end of the sample interva
 Click **Copy setup link** to share an initial experiment URL, for example:
 
 ```text
-https://YOURNAME.github.io/Two_Tank_Control_Lab/?task=leak&A1=1.4&A2=1.6&k12=0.65&k2=0.43&qmax=3.2&dt=0.2&setpoint=26
+https://auralius.github.io/Two_Tank_Control_Lab/?task=leak&A1=1.4&A2=1.6&k12=0.65&k2=0.43&qmax=3.2&dt=0.2&setpoint=26
 ```
 
 The URL sets initial values; it does not prevent students from modifying them.
