@@ -24,7 +24,7 @@ Publish on GitHub Pages by uploading this folder's **contents** to your GitHub r
 
 With water levels `h1`, `h2` in **cm** and flows in **L/s**:
 
-\[
+$$
 \begin{aligned}
 A_1\dot h_1(t) &= q_p(t) - q_{12}(t),\\
 A_2\dot h_2(t) &= q_{12}(t) - q_2(t) - d(t),\\
@@ -32,7 +32,7 @@ q_{12}(t) &= k_{12}\sqrt{h_1(t)},\\
 q_2(t) &= k_2\sqrt{h_2(t)},\\
 q_p(t) &= \frac{u(t)}{100}q_{\max}.
 \end{aligned}
-\]
+$$
 
 `u` is the controller's **pump command in percent**, saturated to the interval **[0, 100]**. The controller manipulates only this pump command. The additional drain `d(t)` is zero except during the leak-disturbance exercise. The outlet obeys an idealized square-root gravity relation; the tanks are **non-interacting**, meaning `q12` depends on Tank 1 level, *not* the difference `h1-h2`.
 
@@ -52,13 +52,13 @@ Initial conditions: `h1(0)=10 cm`, `h2(0)=8 cm`; initial pump command is zero. T
 
 At each controller sample `T_s=params.dt`, the simulator holds the command constant. It integrates the volume-balance equations with forward Euler using internal substeps no larger than **0.05 s**. For a substep `δ`:
 
-\[
+$$
 \begin{aligned}
 V_1^+ &= V_1 + \delta(q_p-q_{12}),\\
 V_2^+ &= V_2 + \delta(q_{12}-q_2-d),\\
 h_1^+ &= V_1^+/A_1,\quad h_2^+=V_2^+/A_2.
 \end{aligned}
-\]
+$$
 
 The implementation caps withdrawals to available liquid, prevents negative volumes, and spills any liquid above each tank's maximum capacity. Substep flows are integrated as volumes; reported flow values are **sample-averaged** over the most recent `params.dt`.
 
@@ -157,7 +157,7 @@ Each row after the first represents the state at the **end of the sample interva
 Click **Copy setup link** to share an initial experiment URL, for example:
 
 ```text
-https://YOURNAME.github.io/Two_Tank_Control_Lab/?task=leak&A1=1.4&A2=1.6&k12=0.65&k2=0.43&qmax=3.2&dt=0.2&setpoint=26
+https://auralius.github.io/Two_Tank_Control_Lab/?task=leak&A1=1.4&A2=1.6&k12=0.65&k2=0.43&qmax=3.2&dt=0.2&setpoint=26
 ```
 
 The URL sets initial values; it does not prevent students from modifying them.
